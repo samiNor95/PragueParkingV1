@@ -1,17 +1,18 @@
-﻿using System.Runtime.CompilerServices;
+﻿string[] parkingGarage = new string[100];
 
-string[] parkingGarage = new string[100];
 while (true)
 {
-    Console.WriteLine("\n== PRAGUE PARKING ==");
+    Console.WriteLine("\n=== PRAGUE PARKING ===");
     Console.WriteLine("1. Parkera fordon");
-    Console.WriteLine("2. Flytta forden");
+    Console.WriteLine("2. Flytta fordon");
     Console.WriteLine("3. Hämta ut fordon");
-    Console.WriteLine("4. sök fordon");
+    Console.WriteLine("4. Sök fordon");
     Console.WriteLine("5. Visa parkeringen");
     Console.WriteLine("6. Avsluta");
-    Console.WriteLine(" Välj ett alternativ:");
+    Console.Write("Välj ett alternativ: ");
+
     string val = Console.ReadLine()!;
+
     if (val == "1")
     {
         Console.Write("Ange fordonstyp (CAR/MC): ");
@@ -31,11 +32,12 @@ while (true)
             registreringsnummer.Contains(" "))
         {
             Console.WriteLine(
-                "Registreringsnumret måste innehålla 1-10 tecken utan mellanslag."
+                "Registreringsnumret måste innehålla 1–10 tecken utan mellanslag."
             );
 
             continue;
         }
+
         bool finnsRedan = false;
 
         for (int i = 0; i < parkingGarage.Length; i++)
@@ -70,9 +72,9 @@ while (true)
 
             continue;
         }
-        string fordon = fordonstyp + "#" + registreringsnummer;
 
-             bool parkerad = false;
+        string fordon = fordonstyp + "#" + registreringsnummer;
+        bool parkerad = false;
 
         if (fordonstyp == "MC")
         {
@@ -117,13 +119,12 @@ while (true)
             Console.WriteLine("Parkeringen är full.");
         }
     }
-
     else if (val == "2")
     {
         Console.Write("Ange registreringsnummer: ");
         string registreringsnummer = Console.ReadLine()!.ToUpper();
 
-        Console.Write("Ange den nya platsen (1-100): ");
+        Console.Write("Ange den nya platsen (1–100): ");
         int nyPlats = int.Parse(Console.ReadLine()!);
 
         if (nyPlats < 1 || nyPlats > 100)
@@ -325,13 +326,15 @@ while (true)
             }
             else
             {
-                Console.WriteLine($"Plats {i + 1}: {parkingGarage[i]}");
+                Console.WriteLine(
+                    $"Plats {i + 1}: {parkingGarage[i]}"
+                );
             }
         }
     }
     else if (val == "6")
     {
-        Console.WriteLine("Progtammet avslutas.");
+        Console.WriteLine("Programmet avslutas.");
         break;
     }
     else
