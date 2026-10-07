@@ -1,82 +1,136 @@
-﻿string[] parkingGarage = new string[100];
+﻿using System;
 
-while (true)
+class Program
 {
-    Console.WriteLine("\n=== PRAGUE PARKING ===");
-    Console.WriteLine("1. Parkera fordon");
-    Console.WriteLine("2. Flytta fordon");
-    Console.WriteLine("3. Hämta ut fordon");
-    Console.WriteLine("4. Sök fordon");
-    Console.WriteLine("5. Visa parkeringen");
-    Console.WriteLine("6. Avsluta");
-    Console.Write("Välj ett alternativ: ");
+    static string[] parkingGarage = new string[100];
 
-    string val = Console.ReadLine()!;
+    static void Main()
+    {
+        while (true)
+        {
+            DisplayMenu();
+            string choice = GetMenuChoice();
 
-    if (val == "1")
+            if (choice == "1")
+            {
+                ParkVehicle();
+            }
+            else if (choice == "2")
+            {
+                MoveVehicle();
+            }
+            else if (choice == "3")
+            {
+                RemoveVehicle();
+            }
+            else if (choice == "4")
+            {
+                SearchVehicle();
+            }
+            else if (choice == "5")
+            {
+                DisplayGarageContents();
+            }
+            else if (choice == "6")
+            {
+                Console.WriteLine("Programmet avslutas.");
+                break;
+            }
+            else
+            {
+                Console.WriteLine("Felaktigt val.");
+            }
+        }
+    }
+
+    static void DisplayMenu()
+    {
+        Console.WriteLine("\n=== PRAGUE PARKING ===");
+        Console.WriteLine("1. Parkera fordon");
+        Console.WriteLine("2. Flytta fordon");
+        Console.WriteLine("3. Hämta ut fordon");
+        Console.WriteLine("4. Sök fordon");
+        Console.WriteLine("5. Visa parkeringen");
+        Console.WriteLine("6. Avsluta");
+    }
+
+    static string GetMenuChoice()
+    {
+        Console.Write("Välj ett alternativ: ");
+        return Console.ReadLine()!;
+    }
+
+    static void ParkVehicle()
     {
         Console.Write("Ange fordonstyp (CAR/MC): ");
-        string fordonstyp = Console.ReadLine()!.ToUpper();
+        string vehicleType = Console.ReadLine()!.ToUpper();
 
-        if (fordonstyp != "CAR" && fordonstyp != "MC")
+        if (vehicleType != "CAR" && vehicleType != "MC")
         {
             Console.WriteLine("Fordonstypen måste vara CAR eller MC.");
-            continue;
+            return;
         }
 
         Console.Write("Ange registreringsnummer: ");
-        string registreringsnummer = Console.ReadLine()!.ToUpper();
+        string regNumber = Console.ReadLine()!.ToUpper();
 
-        if (string.IsNullOrWhiteSpace(registreringsnummer) ||
-            registreringsnummer.Length > 10 ||
-            registreringsnummer.Contains(" "))
+        if (!IsValidRegistrationNumber(regNumber))
         {
-            Console.WriteLine(
-                "Registreringsnumret måste innehålla 1–10 tecken utan mellanslag."
-            );
-
-            continue;
+            Console.WriteLine("Registreringsnumret måste innehålla 1-10 tecken utan mellanslag.");
+            return;
         }
 
-        bool finnsRedan = false;
-
-        for (int i = 0; i < parkingGarage.Length; i++)
+        if (FindVehicle(regNumber, out int existingSlot))
         {
-            if (string.IsNullOrEmpty(parkingGarage[i]))
-            {
-                continue;
-            }
-
-            string[] fordonPåPlatsen = parkingGarage[i].Split('|');
-
-            foreach (string parkeratFordon in fordonPåPlatsen)
-            {
-                if (parkeratFordon.EndsWith("#" + registreringsnummer))
-                {
-                    finnsRedan = true;
-                    break;
-                }
-            }
-
-            if (finnsRedan)
-            {
-                break;
-            }
+            Console.WriteLine($"Fordonet finns redan på plats {existingSlot + 1}.");
+            return;
         }
 
-        if (finnsRedan)
-        {
-            Console.WriteLine(
-                "Ett fordon med detta registreringsnummer finns redan."
-            );
+        int freeSlot = SearchFreeSpot(vehicleType);
 
-            continue;
+        if (freeSlot == -1)
+        {
+            Console.WriteLine("Parkeringen är full.");
+            return;
         }
 
-        string fordon = fordonstyp + "#" + registreringsnummer;
-        bool parkerad = false;
+        string vehicle = vehicleType + "#" + regNumber;
+        bool sharedSpot = !string.IsNullOrEmpty(parkingGarage[freeSlot]);
 
-        if (fordonstyp == "MC")
+        InsertVehicleIntoGarage(vehicle, freeSlot);
+
+        if (sharedSpot)
+        {
+            Console.WriteLine($"Motorcykeln parkerades på plats {freeSlot + 1} tillsammans med en annan MC.");
+        }
+        else
+        {
+            Console.WriteLine($"Fordonet parkerades på plats {freeSlot + 1}.");
+        }
+    }
+
+    static bool IsValidRegistrationNumber(string regNumber)
+    {
+        return !string.IsNullOrWhiteSpace(regNumber) &&
+               regNumber.Length <= 10 &&
+               !regNumber.Contains(" ");
+    }
+
+    static void InsertVehicleIntoGarage(string vehicle, int slotNumber)
+    {
+        if (string.IsNullOrEmpty(parkingGarage[slotNumber]))
+        {
+            parkingGarage[slotNumber] = vehicle;
+        }
+        else
+        {
+            parkingGarage[slotNumber] += "|" + vehicle;
+        }
+    }
+
+    static int SearchFreeSpot(string vehicleType)
+    {
+        if (vehicleType == "MC")
         {
             for (int i = 0; i < parkingGarage.Length; i++)
             {
@@ -84,147 +138,39 @@ while (true)
                     parkingGarage[i].StartsWith("MC#") &&
                     !parkingGarage[i].Contains("|"))
                 {
-                    parkingGarage[i] = parkingGarage[i] + "|" + fordon;
-
-                    Console.WriteLine(
-                        $"Motorcykeln ska parkeras på plats {i + 1} tillsammans med en annan MC."
-                    );
-
-                    parkerad = true;
-                    break;
+                    return i;
                 }
             }
         }
-
-        if (!parkerad)
-        {
-            for (int i = 0; i < parkingGarage.Length; i++)
-            {
-                if (string.IsNullOrEmpty(parkingGarage[i]))
-                {
-                    parkingGarage[i] = fordon;
-
-                    Console.WriteLine(
-                        $"Fordonet ska parkeras på plats {i + 1}."
-                    );
-
-                    parkerad = true;
-                    break;
-                }
-            }
-        }
-
-        if (!parkerad)
-        {
-            Console.WriteLine("Parkeringen är full.");
-        }
-    }
-    else if (val == "2")
-    {
-        Console.Write("Ange registreringsnummer: ");
-        string registreringsnummer = Console.ReadLine()!.ToUpper();
-
-        Console.Write("Ange den nya platsen (1–100): ");
-        int nyPlats = int.Parse(Console.ReadLine()!);
-
-        if (nyPlats < 1 || nyPlats > 100)
-        {
-            Console.WriteLine("Platsnumret måste vara mellan 1 och 100.");
-            continue;
-        }
-
-        int gammaltIndex = -1;
-        string fordonSomFlyttas = "";
 
         for (int i = 0; i < parkingGarage.Length; i++)
         {
             if (string.IsNullOrEmpty(parkingGarage[i]))
             {
-                continue;
-            }
-
-            string[] fordonPåPlatsen = parkingGarage[i].Split('|');
-
-            foreach (string fordon in fordonPåPlatsen)
-            {
-                if (fordon.EndsWith("#" + registreringsnummer))
-                {
-                    gammaltIndex = i;
-                    fordonSomFlyttas = fordon;
-                    break;
-                }
-            }
-
-            if (gammaltIndex != -1)
-            {
-                break;
+                return i;
             }
         }
 
-        int nyttIndex = nyPlats - 1;
+        return -1;
+    }
 
-        if (gammaltIndex == -1)
+    static void SearchVehicle()
+    {
+        Console.Write("Ange registreringsnummer: ");
+        string regNumber = Console.ReadLine()!.ToUpper();
+
+        if (FindVehicle(regNumber, out int slotNumber))
         {
-            Console.WriteLine("Fordonet hittades inte.");
-        }
-        else if (gammaltIndex == nyttIndex)
-        {
-            Console.WriteLine("Fordonet står redan på den platsen.");
+            Console.WriteLine($"Fordonet finns på plats {slotNumber + 1}.");
         }
         else
         {
-            bool kanFlyttas = false;
-
-            if (string.IsNullOrEmpty(parkingGarage[nyttIndex]))
-            {
-                parkingGarage[nyttIndex] = fordonSomFlyttas;
-                kanFlyttas = true;
-            }
-            else if (fordonSomFlyttas.StartsWith("MC#") &&
-                     parkingGarage[nyttIndex].StartsWith("MC#") &&
-                     !parkingGarage[nyttIndex].Contains("|"))
-            {
-                parkingGarage[nyttIndex] =
-                    parkingGarage[nyttIndex] + "|" + fordonSomFlyttas;
-
-                kanFlyttas = true;
-            }
-            else
-            {
-                Console.WriteLine("Den nya platsen är upptagen.");
-            }
-
-            if (kanFlyttas)
-            {
-                string[] gamlaFordon =
-                    parkingGarage[gammaltIndex].Split('|');
-
-                if (gamlaFordon.Length == 1)
-                {
-                    parkingGarage[gammaltIndex] = "";
-                }
-                else if (gamlaFordon[0] == fordonSomFlyttas)
-                {
-                    parkingGarage[gammaltIndex] = gamlaFordon[1];
-                }
-                else
-                {
-                    parkingGarage[gammaltIndex] = gamlaFordon[0];
-                }
-
-                Console.WriteLine(
-                    $"Fordonet flyttades till plats {nyPlats}."
-                );
-            }
+            Console.WriteLine("Fordonet hittades inte.");
         }
     }
-    else if (val == "3")
+
+    static bool FindVehicle(string regNumber, out int slotNumber)
     {
-        Console.Write("Ange registreringsnummer: ");
-        string registreringsnummer = Console.ReadLine()!.ToUpper();
-
-        bool hittad = false;
-
         for (int i = 0; i < parkingGarage.Length; i++)
         {
             if (string.IsNullOrEmpty(parkingGarage[i]))
@@ -232,89 +178,135 @@ while (true)
                 continue;
             }
 
-            string[] fordonPåPlatsen = parkingGarage[i].Split('|');
+            string[] vehicles = parkingGarage[i].Split('|');
 
-            for (int j = 0; j < fordonPåPlatsen.Length; j++)
+            foreach (string vehicle in vehicles)
             {
-                if (fordonPåPlatsen[j].EndsWith("#" + registreringsnummer))
+                if (vehicle.EndsWith("#" + regNumber))
                 {
-                    Console.WriteLine(
-                        $"Fordonet {fordonPåPlatsen[j]} hämtas från plats {i + 1}."
-                    );
-
-                    if (fordonPåPlatsen.Length == 1)
-                    {
-                        parkingGarage[i] = "";
-                    }
-                    else
-                    {
-                        if (j == 0)
-                        {
-                            parkingGarage[i] = fordonPåPlatsen[1];
-                        }
-                        else
-                        {
-                            parkingGarage[i] = fordonPåPlatsen[0];
-                        }
-                    }
-
-                    hittad = true;
-                    break;
+                    slotNumber = i;
+                    return true;
                 }
             }
-
-            if (hittad)
-            {
-                break;
-            }
         }
 
-        if (!hittad)
-        {
-            Console.WriteLine("Fordonet hittades inte.");
-        }
+        slotNumber = -1;
+        return false;
     }
-    else if (val == "4")
+
+    static void RemoveVehicle()
     {
         Console.Write("Ange registreringsnummer: ");
-        string registreringsnummer = Console.ReadLine()!.ToUpper();
+        string regNumber = Console.ReadLine()!.ToUpper();
 
-        bool hittad = false;
-
-        for (int i = 0; i < parkingGarage.Length; i++)
-        {
-            if (string.IsNullOrEmpty(parkingGarage[i]))
-            {
-                continue;
-            }
-
-            string[] fordonPåPlatsen = parkingGarage[i].Split('|');
-
-            foreach (string fordon in fordonPåPlatsen)
-            {
-                if (fordon.EndsWith("#" + registreringsnummer))
-                {
-                    Console.WriteLine(
-                        $"Fordonet {fordon} finns på plats {i + 1}."
-                    );
-
-                    hittad = true;
-                    break;
-                }
-            }
-
-            if (hittad)
-            {
-                break;
-            }
-        }
-
-        if (!hittad)
+        if (!FindVehicle(regNumber, out int slotNumber))
         {
             Console.WriteLine("Fordonet hittades inte.");
+            return;
+        }
+
+        string vehicle = GetVehicleFromSlot(regNumber, slotNumber);
+        RemoveVehicleFromGarage(regNumber, slotNumber);
+
+        Console.WriteLine($"Fordonet {vehicle} hämtades från plats {slotNumber + 1}.");
+    }
+
+    static void RemoveVehicleFromGarage(string regNumber, int slotNumber)
+    {
+        string[] vehicles = parkingGarage[slotNumber].Split('|');
+
+        if (vehicles.Length == 1)
+        {
+            parkingGarage[slotNumber] = "";
+        }
+        else if (vehicles[0].EndsWith("#" + regNumber))
+        {
+            parkingGarage[slotNumber] = vehicles[1];
+        }
+        else
+        {
+            parkingGarage[slotNumber] = vehicles[0];
         }
     }
-    else if (val == "5")
+
+    static string GetVehicleFromSlot(string regNumber, int slotNumber)
+    {
+        string[] vehicles = parkingGarage[slotNumber].Split('|');
+
+        foreach (string vehicle in vehicles)
+        {
+            if (vehicle.EndsWith("#" + regNumber))
+            {
+                return vehicle;
+            }
+        }
+
+        return "";
+    }
+
+    static void MoveVehicle()
+    {
+        Console.Write("Ange registreringsnummer: ");
+        string regNumber = Console.ReadLine()!.ToUpper();
+
+        if (!FindVehicle(regNumber, out int oldSlot))
+        {
+            Console.WriteLine("Fordonet hittades inte.");
+            return;
+        }
+
+        Console.Write("Ange den nya platsen (1-100): ");
+
+        if (!int.TryParse(Console.ReadLine(), out int newPlace) ||
+            newPlace < 1 || newPlace > parkingGarage.Length)
+        {
+            Console.WriteLine("Platsnumret måste vara mellan 1 och 100.");
+            return;
+        }
+
+        int newSlot = newPlace - 1;
+
+        if (oldSlot == newSlot)
+        {
+            Console.WriteLine("Fordonet står redan på den platsen.");
+            return;
+        }
+
+        string vehicle = GetVehicleFromSlot(regNumber, oldSlot);
+
+        if (!CanParkAtSlot(vehicle, newSlot))
+        {
+            Console.WriteLine("Den nya platsen är upptagen.");
+            return;
+        }
+
+        MoveVehicleInGarage(regNumber, vehicle, oldSlot, newSlot);
+        Console.WriteLine($"Fordonet flyttades till plats {newPlace}.");
+    }
+
+    static bool CanParkAtSlot(string vehicle, int slotNumber)
+    {
+        if (string.IsNullOrEmpty(parkingGarage[slotNumber]))
+        {
+            return true;
+        }
+
+        return vehicle.StartsWith("MC#") &&
+               parkingGarage[slotNumber].StartsWith("MC#") &&
+               !parkingGarage[slotNumber].Contains("|");
+    }
+
+    static void MoveVehicleInGarage(
+        string regNumber,
+        string vehicle,
+        int oldSlot,
+        int newSlot)
+    {
+        InsertVehicleIntoGarage(vehicle, newSlot);
+        RemoveVehicleFromGarage(regNumber, oldSlot);
+    }
+
+    static void DisplayGarageContents()
     {
         Console.WriteLine("\n=== PARKERINGSPLATSER ===");
 
@@ -326,19 +318,8 @@ while (true)
             }
             else
             {
-                Console.WriteLine(
-                    $"Plats {i + 1}: {parkingGarage[i]}"
-                );
+                Console.WriteLine($"Plats {i + 1}: {parkingGarage[i]}");
             }
         }
-    }
-    else if (val == "6")
-    {
-        Console.WriteLine("Programmet avslutas.");
-        break;
-    }
-    else
-    {
-        Console.WriteLine("Felaktigt val.");
     }
 }
